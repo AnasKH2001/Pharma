@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UploadMedicinesRequest;
+use App\Imports\MedicinesImport;
 use App\Models\Pharmacy;
 use App\Services\AdminService;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AdminController extends Controller
 {
@@ -55,5 +58,18 @@ class AdminController extends Controller
         $result = $this->adminService->getPharmacyDetails($pharmacy);
         
         return response()->json($result);
+    }
+
+    public function uploadMedicines(UploadMedicinesRequest $request)
+    {
+        $import = new MedicinesImport();
+        Excel::import($import, $request->file('file'));
+        
+        $added = $import->getAddedCount();
+        $skipped = $import->getSkippedCount();
+        
+        return response()->json([
+            'message' => "{$added} medicines added, {$skipped} duplicates skipped"
+        ]);
     }
 }

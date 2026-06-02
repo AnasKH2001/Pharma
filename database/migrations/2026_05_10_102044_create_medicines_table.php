@@ -6,28 +6,25 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('medicines', function (Blueprint $table) {
             $table->id();
-            $table->string('brand_name');
-            $table->string('manufacturer');
-            $table->string('generic_name');
-            $table->string('dosage');
-            $table->string('form');
+            $table->string('brand_name', 500);
+            $table->string('manufacturer', 500);
+            $table->text('generic_name');  // TEXT for long descriptions
+            $table->string('dosage', 255);
+            $table->string('form', 255);
             $table->timestamps();
+            
+            // Add unique constraint
+            $table->unique(['brand_name', 'manufacturer', 'generic_name', 'dosage', 'form'], 'medicines_unique_key');
             
             $table->index('generic_name');
             $table->index('brand_name');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('medicines');

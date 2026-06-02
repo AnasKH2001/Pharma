@@ -48,4 +48,5 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/pharmacies/{pharmacy}', [AdminController::class, 'show']);
     Route::put('/pharmacies/{pharmacy}/approve', [AdminController::class, 'approve']);
     Route::delete('/pharmacies/{pharmacy}/reject', [AdminController::class, 'reject']);
+    Route::post('/medicines/upload', [AdminController::class, 'uploadMedicines']);
 });

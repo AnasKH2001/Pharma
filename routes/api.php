@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\LoginController;
 use App\Http\Controllers\Api\PharmaRegisterController;
 use App\Http\Controllers\Api\UserRegisterController;
@@ -49,4 +50,11 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::put('/pharmacies/{pharmacy}/approve', [AdminController::class, 'approve']);
     Route::delete('/pharmacies/{pharmacy}/reject', [AdminController::class, 'reject']);
     Route::post('/medicines/upload', [AdminController::class, 'uploadMedicines']);
+    Route::get('/pharmacies/{id}/inventory', [AdminController::class, 'pharmacyInventory']);
+});
+
+// Approved Pharmcies
+Route::middleware(['auth:sanctum', 'pharmacy.approved'])->group(function () {
+    Route::post('/inventory/upload', [InventoryController::class, 'upload']);
+    Route::get('/inventory', [InventoryController::class, 'index']);
 });

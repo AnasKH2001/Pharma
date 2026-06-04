@@ -26,6 +26,7 @@ return new class extends Migration
             $table->timestamps();
             
             $table->index('is_active');
+            $table->index('email');
         });
     }
 

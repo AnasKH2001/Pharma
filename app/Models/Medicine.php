@@ -50,4 +50,11 @@ class Medicine extends Model
     {
         return "{$this->brand_name} ({$this->generic_name}) - {$this->dosage}";
     }
+
+    public function pharmaciesInStock()
+    {
+        return $this->belongsToMany(Pharmacy::class, 'inventories')
+            ->wherePivot('quantity', '>', 0)
+            ->withPivot('quantity', 'price');
+    }
 }

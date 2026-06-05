@@ -78,7 +78,20 @@ class Pharmacy extends Model
     {
         $now = now();
         $currentTime = $now->format('H:i:s');
-        return $currentTime >= $this->opens_at && $currentTime <= $this->closes_at;
+        
+        // Convert opens_at and closes_at to time strings
+        $openTime = date('H:i:s', strtotime($this->opens_at));
+        $closeTime = date('H:i:s', strtotime($this->closes_at));
+        
+        return $currentTime >= $openTime && $currentTime <= $closeTime;
+    }
+
+    public function getFormattedOpeningHours(): string
+    {
+        $openTime = date('H:i', strtotime($this->opens_at));
+        $closeTime = date('H:i', strtotime($this->closes_at));
+        
+        return "{$openTime} - {$closeTime}";
     }
 
     // Get average rating

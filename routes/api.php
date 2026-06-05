@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\LoginController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PharmaRegisterController;
 use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\SearchController;
@@ -61,6 +62,9 @@ Route::middleware(['auth:sanctum', 'pharmacy.approved'])->group(function () {
     Route::get('/inventory', [InventoryController::class, 'index']);
     Route::post('/sales', [SaleController::class, 'store']);
     Route::get('/sales', [SaleController::class, 'index']);
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'markAsRead']);
+    Route::delete('/notifications', [NotificationController::class, 'markAllAsRead']);
 });
 
 Route::get('/search/medicines', [SearchController::class, 'searchMedicines']);

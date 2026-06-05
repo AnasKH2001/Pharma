@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\LoginController;
 use App\Http\Controllers\Api\PharmaRegisterController;
+use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\UserRegisterController;
 use Illuminate\Http\Request;
@@ -58,6 +59,8 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
 Route::middleware(['auth:sanctum', 'pharmacy.approved'])->group(function () {
     Route::post('/inventory/upload', [InventoryController::class, 'upload']);
     Route::get('/inventory', [InventoryController::class, 'index']);
+    Route::post('/sales', [SaleController::class, 'store']);
+    Route::get('/sales', [SaleController::class, 'index']);
 });
 
 Route::get('/search/medicines', [SearchController::class, 'searchMedicines']);

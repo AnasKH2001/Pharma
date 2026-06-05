@@ -26,4 +26,23 @@ class InventoryRepository
             ->where('pharmacy_id', $pharmacyId)
             ->get();
     }
+
+    public function decreaseStock($pharmacyId, $medicineId, $quantity)
+    {
+        $inventory = $this->getByPharmacyAndMedicine($pharmacyId, $medicineId);
+        
+        if ($inventory) {
+            $inventory->decrement('quantity', $quantity);
+            $inventory->refresh();
+        }
+        
+        return $inventory;
+    }
+
+    public function getByPharmacyAndMedicine($pharmacyId, $medicineId)
+    {
+        return Inventory::where('pharmacy_id', $pharmacyId)
+            ->where('medicine_id', $medicineId)
+            ->first();
+    }
 }

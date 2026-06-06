@@ -8,49 +8,50 @@ use App\Repositories\AdminRepository;
 class AdminService
 {
     protected AdminRepository $adminRepository;
-    
+
     public function __construct(AdminRepository $adminRepository)
     {
         $this->adminRepository = $adminRepository;
     }
-    
-    public function getPendingPharmacies()
+
+    public function getPendingPharmacies($perPage = 15)
     {
-        $pharmacies = $this->adminRepository->getPendingPharmacies();
-        
+        $pharmacies = $this->adminRepository->getPendingPharmacies($perPage);
+
         // Attach user to each pharmacy
-        foreach ($pharmacies as $pharmacy) {
+        foreach ($pharmacies->getCollection() as $pharmacy) {
             $pharmacy->user = $this->adminRepository->getUserByEmail($pharmacy->email);
         }
-        
+
         return $pharmacies;
     }
-    
-    public function getApprovedPharmacies()
+
+    public function getApprovedPharmacies($perPage = 15)
     {
-        $pharmacies = $this->adminRepository->getApprovedPharmacies();
-        
-        foreach ($pharmacies as $pharmacy) {
+        $pharmacies = $this->adminRepository->getApprovedPharmacies($perPage);
+
+        // Attach user to each pharmacy
+        foreach ($pharmacies->getCollection() as $pharmacy) {
             $pharmacy->user = $this->adminRepository->getUserByEmail($pharmacy->email);
         }
-        
+
         return $pharmacies;
     }
-    
+
     public function approvePharmacy(Pharmacy $pharmacy)
     {
         return $this->adminRepository->approvePharmacy($pharmacy);
     }
-    
+
     public function rejectPharmacy(Pharmacy $pharmacy)
     {
         $this->adminRepository->rejectPharmacy($pharmacy);
     }
-    
+
     public function getPharmacyDetails(Pharmacy $pharmacy)
     {
         $credentials = $this->adminRepository->getPharmacyCredentials($pharmacy);
-        
+
         return [
             'pharmacy' => $pharmacy,
             'credentials' => $credentials

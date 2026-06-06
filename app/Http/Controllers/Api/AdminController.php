@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UploadMedicinesRequest;
 use App\Imports\MedicinesImport;
-use App\Models\Inventory;
 use App\Models\Pharmacy;
 use App\Services\AdminService;
 use App\Services\InventoryService;
@@ -28,18 +27,20 @@ class AdminController extends Controller
         $this->statService = $statService;
     }
 
-    public function pendingPharmacies()
+    public function pendingPharmacies(Request $request)
     {
-        $pharmacies = $this->adminService->getPendingPharmacies();
+        $perPage = $request->get('per_page', 15);
+        $pharmacies = $this->adminService->getPendingPharmacies($perPage);
 
-        return response()->json(['pharmacies' => $pharmacies]);
+        return response()->json($pharmacies);
     }
 
-    public function approvedPharmacies()
+    public function approvedPharmacies(Request $request)
     {
-        $pharmacies = $this->adminService->getApprovedPharmacies();
+        $perPage = $request->get('per_page', 15);
+        $pharmacies = $this->adminService->getApprovedPharmacies($perPage);
 
-        return response()->json(['pharmacies' => $pharmacies]);
+        return response()->json($pharmacies);
     }
 
     public function approve(Pharmacy $pharmacy)
@@ -81,7 +82,7 @@ class AdminController extends Controller
         ]);
     }
 
-    public function pharmacyInventory($id)
+    public function pharmacyInventory(Request $request, $id)
     {
         $pharmacy = Pharmacy::find($id);
 
@@ -89,7 +90,24 @@ class AdminController extends Controller
             return response()->json(['message' => 'Pharmacy not found'], 404);
         }
 
-        $inventory = $this->inventoryService->getPharmacyInventory($id);
+        $perPage = $request->get('per_page', 15);
+        $inventory = $this->inventoryService->getPharmacyInventory($id, $perPage);
+
+        // Format the paginated data
+        $inventory->getCollection()->transform(function ($item) {
+            return [
+                'id' => $item->id,
+                'medicine' => [
+                    'id' => $item->medicine->id,
+                    'brand_name' => $item->medicine->brand_name,
+                    'generic_name' => $item->medicine->generic_name,
+                    'dosage' => $item->medicine->dosage,
+                    'form' => $item->medicine->form,
+                ],
+                'quantity' => $item->quantity,
+                'price' => $item->price,
+            ];
+        });
 
         return response()->json([
             'pharmacy' => [
@@ -97,20 +115,7 @@ class AdminController extends Controller
                 'name' => $pharmacy->name,
                 'is_active' => $pharmacy->is_active,
             ],
-            'inventory' => $inventory->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'medicine' => [
-                        'id' => $item->medicine->id,
-                        'brand_name' => $item->medicine->brand_name,
-                        'generic_name' => $item->medicine->generic_name,
-                        'dosage' => $item->medicine->dosage,
-                        'form' => $item->medicine->form,
-                    ],
-                    'quantity' => $item->quantity,
-                    'price' => $item->price,
-                ];
-            }),
+            'inventory' => $inventory,
         ]);
     }
 

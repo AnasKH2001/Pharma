@@ -10,12 +10,12 @@ class SaleRepository
     {
         return PharmaSale::create($data);
     }
-    
-    public function getByPharmacy($pharmacyId)
+
+    public function getByPharmacy($pharmacyId, $perPage = 15)
     {
         return PharmaSale::with('medicine')
             ->where('pharmacy_id', $pharmacyId)
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate($perPage);
     }
 }

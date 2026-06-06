@@ -10,7 +10,7 @@ class SaleService
 {
     protected SaleRepository $saleRepository;
     protected InventoryRepository $inventoryRepository;
-    
+
     public function __construct(
         SaleRepository $saleRepository,
         InventoryRepository $inventoryRepository
@@ -60,9 +60,9 @@ class SaleService
             'remaining_stock' => $inventory ? $inventory->quantity : 0
         ];
     }
-    
-    public function getSalesHistory($pharmacyId)
+
+    public function getSalesHistory($pharmacyId, $perPage = 15)
     {
-        return $this->saleRepository->getByPharmacy($pharmacyId);
+        return $this->saleRepository->getByPharmacy($pharmacyId, $perPage);
     }
 }

@@ -20,22 +20,23 @@ class InventoryRepository
         );
     }
 
-    public function getByPharmacy($pharmacyId)
+    public function getByPharmacy($pharmacyId, $perPage = 15)
     {
         return Inventory::with('medicine')
             ->where('pharmacy_id', $pharmacyId)
-            ->get();
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
     }
 
     public function decreaseStock($pharmacyId, $medicineId, $quantity)
     {
         $inventory = $this->getByPharmacyAndMedicine($pharmacyId, $medicineId);
-        
+
         if ($inventory) {
             $inventory->decrement('quantity', $quantity);
             $inventory->refresh();
         }
-        
+
         return $inventory;
     }
 

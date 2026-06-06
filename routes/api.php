@@ -67,6 +67,9 @@ Route::middleware(['auth:sanctum', 'pharmacy.approved'])->group(function () {
     Route::delete('/notifications/{id}', [NotificationController::class, 'markAsRead']);
     Route::delete('/notifications', [NotificationController::class, 'markAllAsRead']);
     Route::get('/pharmacy/stats', [StatController::class, 'dashboard']);
+    Route::get('/pharmacy/top-medicines', [StatController::class, 'topMedicines']);
+    Route::get('/pharmacy/sales-chart', [StatController::class, 'salesChart']);
+    Route::get('/pharmacy/low-stock', [StatController::class, 'lowStock']);
 });
 
 Route::get('/search/medicines', [SearchController::class, 'searchMedicines']);

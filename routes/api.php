@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PharmaRegisterController;
 use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Api\StatController;
 use App\Http\Controllers\Api\UserRegisterController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -65,6 +66,7 @@ Route::middleware(['auth:sanctum', 'pharmacy.approved'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::delete('/notifications/{id}', [NotificationController::class, 'markAsRead']);
     Route::delete('/notifications', [NotificationController::class, 'markAllAsRead']);
+    Route::get('/pharmacy/stats', [StatController::class, 'dashboard']);
 });
 
 Route::get('/search/medicines', [SearchController::class, 'searchMedicines']);

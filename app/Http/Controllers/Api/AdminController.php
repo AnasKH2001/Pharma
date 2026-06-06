@@ -9,58 +9,62 @@ use App\Models\Inventory;
 use App\Models\Pharmacy;
 use App\Services\AdminService;
 use App\Services\InventoryService;
+use App\Services\StatService;
+use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
 class AdminController extends Controller
 {
     protected AdminService $adminService;
     protected InventoryService $inventoryService;
+    protected StatService $statService;
 
-    public function __construct(AdminService $adminService, InventoryService $inventoryService)
+    public function __construct(AdminService $adminService, InventoryService $inventoryService, StatService $statService)
     {
         $this->middleware('auth:sanctum');
         $this->middleware('admin');
         $this->adminService = $adminService;
         $this->inventoryService = $inventoryService;
+        $this->statService = $statService;
     }
-    
+
     public function pendingPharmacies()
     {
         $pharmacies = $this->adminService->getPendingPharmacies();
-        
+
         return response()->json(['pharmacies' => $pharmacies]);
     }
-    
+
     public function approvedPharmacies()
     {
         $pharmacies = $this->adminService->getApprovedPharmacies();
-        
+
         return response()->json(['pharmacies' => $pharmacies]);
     }
-    
+
     public function approve(Pharmacy $pharmacy)
     {
         $pharmacy = $this->adminService->approvePharmacy($pharmacy);
-        
+
         return response()->json([
             'message' => 'Pharmacy approved successfully',
             'pharmacy' => $pharmacy
         ]);
     }
-    
+
     public function reject(Pharmacy $pharmacy)
     {
         $this->adminService->rejectPharmacy($pharmacy);
-        
+
         return response()->json([
             'message' => 'Pharmacy rejected and deleted'
         ]);
     }
-    
+
     public function show(Pharmacy $pharmacy)
     {
         $result = $this->adminService->getPharmacyDetails($pharmacy);
-        
+
         return response()->json($result);
     }
 
@@ -68,10 +72,10 @@ class AdminController extends Controller
     {
         $import = new MedicinesImport();
         Excel::import($import, $request->file('file'));
-        
+
         $added = $import->getAddedCount();
         $skipped = $import->getSkippedCount();
-        
+
         return response()->json([
             'message' => "{$added} medicines added, {$skipped} duplicates skipped"
         ]);
@@ -80,13 +84,13 @@ class AdminController extends Controller
     public function pharmacyInventory($id)
     {
         $pharmacy = Pharmacy::find($id);
-        
+
         if (!$pharmacy) {
             return response()->json(['message' => 'Pharmacy not found'], 404);
         }
-        
+
         $inventory = $this->inventoryService->getPharmacyInventory($id);
-        
+
         return response()->json([
             'pharmacy' => [
                 'id' => $pharmacy->id,
@@ -107,6 +111,35 @@ class AdminController extends Controller
                     'price' => $item->price,
                 ];
             }),
+        ]);
+    }
+
+    public function dashboardStats()
+    {
+        $stats = $this->statService->getAdminStats();
+
+        return response()->json($stats);
+    }
+
+    public function topPharmacies(Request $request)
+    {
+        $limit = $request->get('limit', 10);
+        $topPharmacies = $this->statService->getAdminTopPharmacies($limit);
+
+        return response()->json([
+            'top_pharmacies' => $topPharmacies,
+            'total' => $topPharmacies->count()
+        ]);
+    }
+
+    public function salesTrend(Request $request)
+    {
+        $days = $request->get('days', 30);
+        $trend = $this->statService->getAdminSalesTrend($days);
+
+        return response()->json([
+            'trend' => $trend,
+            'days' => $days
         ]);
     }
 }

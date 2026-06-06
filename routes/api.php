@@ -55,6 +55,9 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::delete('/pharmacies/{pharmacy}/reject', [AdminController::class, 'reject']);
     Route::post('/medicines/upload', [AdminController::class, 'uploadMedicines']);
     Route::get('/pharmacies/{id}/inventory', [AdminController::class, 'pharmacyInventory']);
+    Route::get('/dashboard/stats', [AdminController::class, 'dashboardStats']);
+    Route::get('/dashboard/top-pharmacies', [AdminController::class, 'topPharmacies']);
+    Route::get('/dashboard/sales-trend', [AdminController::class, 'salesTrend']);
 });
 
 // Approved Pharmcies

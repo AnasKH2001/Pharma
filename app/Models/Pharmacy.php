@@ -36,6 +36,11 @@ class Pharmacy extends Model
         return $this->hasMany(User::class);
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'email', 'email');
+    }
+
     public function inventories()
     {
         return $this->hasMany(Inventory::class);
@@ -44,8 +49,8 @@ class Pharmacy extends Model
     public function medicines()
     {
         return $this->belongsToMany(Medicine::class, 'inventories')
-                    ->withPivot('quantity', 'price')
-                    ->withTimestamps();
+            ->withPivot('quantity', 'price')
+            ->withTimestamps();
     }
 
     public function sales()
@@ -78,11 +83,11 @@ class Pharmacy extends Model
     {
         $now = now();
         $currentTime = $now->format('H:i:s');
-        
+
         // Convert opens_at and closes_at to time strings
         $openTime = date('H:i:s', strtotime($this->opens_at));
         $closeTime = date('H:i:s', strtotime($this->closes_at));
-        
+
         return $currentTime >= $openTime && $currentTime <= $closeTime;
     }
 
@@ -90,7 +95,7 @@ class Pharmacy extends Model
     {
         $openTime = date('H:i', strtotime($this->opens_at));
         $closeTime = date('H:i', strtotime($this->closes_at));
-        
+
         return "{$openTime} - {$closeTime}";
     }
 

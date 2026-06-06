@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\PharmaSale;
 use App\Models\Inventory;
+use App\Models\Medicine;
+use App\Models\Pharmacy;
+use App\Models\PharmaSale;
+use App\Models\User;
 use Carbon\Carbon;
 
 class StatService
@@ -137,5 +140,112 @@ class StatService
                     'out_since' => $inventory->updated_at->diffForHumans(),
                 ];
             });
+    }
+
+    public function getAdminStats()
+    {
+        $today = Carbon::today();
+        $startOfWeek = Carbon::now()->startOfWeek();
+        $startOfMonth = Carbon::now()->startOfMonth();
+
+        return [
+            'platform_overview' => $this->getPlatformOverview(),
+            'today' => $this->getAdminSalesStats($today, Carbon::now()),
+            'this_week' => $this->getAdminSalesStats($startOfWeek, Carbon::now()),
+            'this_month' => $this->getAdminSalesStats($startOfMonth, Carbon::now()),
+            'pending_pharmacies' => $this->getPendingPharmaciesCount(),
+            'recent_pharmacies' => $this->getRecentPharmacies(),
+        ];
+    }
+
+    private function getPlatformOverview()
+    {
+        return [
+            'total_pharmacies' => Pharmacy::count(),
+            'active_pharmacies' => Pharmacy::where('is_active', true)->count(),
+            'pending_pharmacies' => Pharmacy::where('is_active', false)->count(),
+            'total_medicines' => Medicine::count(),
+            'total_users' => User::count(),
+            'total_sales' => PharmaSale::count(),
+            'total_revenue' => PharmaSale::sum('total_price'),
+        ];
+    }
+
+    private function getAdminSalesStats($startDate, $endDate)
+    {
+        $sales = PharmaSale::whereBetween('created_at', [$startDate, $endDate])->get();
+
+        return [
+            'sales_count' => $sales->count(),
+            'total_revenue' => $sales->sum('total_price'),
+            'items_sold' => $sales->sum('quantity'),
+        ];
+    }
+
+    private function getPendingPharmaciesCount()
+    {
+        return Pharmacy::where('is_active', false)->count();
+    }
+
+    private function getRecentPharmacies()
+    {
+        return Pharmacy::with('user')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($pharmacy) {
+                return [
+                    'id' => $pharmacy->id,
+                    'name' => $pharmacy->name,
+                    'email' => $pharmacy->email,
+                    'is_active' => $pharmacy->is_active,
+                    'registered_at' => $pharmacy->created_at->diffForHumans(),
+                ];
+            });
+    }
+
+    public function getAdminTopPharmacies($limit = 10)
+    {
+        return PharmaSale::select('pharmacy_id')
+            ->with('pharmacy')
+            ->selectRaw('SUM(quantity) as total_items_sold, SUM(total_price) as total_revenue, COUNT(*) as total_sales')
+            ->groupBy('pharmacy_id')
+            ->orderBy('total_revenue', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'pharmacy_id' => $item->pharmacy_id,
+                    'pharmacy_name' => $item->pharmacy->name,
+                    'is_active' => $item->pharmacy->is_active,
+                    'total_sales' => (int) $item->total_sales,
+                    'total_items_sold' => (int) $item->total_items_sold,
+                    'total_revenue' => (int) $item->total_revenue,
+                ];
+            });
+    }
+
+    public function getAdminSalesTrend($days = 30)
+    {
+        $sales = PharmaSale::where('created_at', '>=', now()->subDays($days))
+            ->get()
+            ->groupBy(function ($sale) {
+                return $sale->created_at->format('Y-m-d');
+            });
+
+        $chartData = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $daySales = $sales->get($date, collect([]));
+
+            $chartData[] = [
+                'date' => $date,
+                'sales_count' => $daySales->count(),
+                'items_sold' => $daySales->sum('quantity'),
+                'revenue' => $daySales->sum('total_price'),
+            ];
+        }
+
+        return $chartData;
     }
 }

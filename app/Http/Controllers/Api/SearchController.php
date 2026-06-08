@@ -6,15 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\SearchMedicineRequest;
 use App\Models\Medicine;
 use App\Services\SearchService;
+use App\Services\HistoryService;
 use Illuminate\Http\Request;
 
 class SearchController extends Controller
 {
     protected SearchService $searchService;
+    protected HistoryService $historyService;
 
-    public function __construct(SearchService $searchService)
+    public function __construct(SearchService $searchService, HistoryService $historyService)
     {
         $this->searchService = $searchService;
+        $this->historyService = $historyService;
     }
 
     // API 1: Search medicines (autocomplete)
@@ -37,11 +40,17 @@ class SearchController extends Controller
     // API 2: Find pharmacies by medicine IDs
     public function findPharmacies(SearchMedicineRequest $request)
     {
+        $userId = auth()->check() ? auth()->id() : null;
+        
+        // Record search history
+        $this->historyService->recordSearch($userId, $request->medicine_ids);
+        
         $result = $this->searchService->findPharmaciesByMedicines(
             $request->medicine_ids,
             $request->latitude,
             $request->longitude,
-            $request->radius ?? 5
+            $request->radius ?? 5,
+            $userId
         );
         
         return response()->json($result);

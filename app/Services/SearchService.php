@@ -6,7 +6,7 @@ use App\Models\Pharmacy;
 
 class SearchService
 {
-    public function findPharmaciesByMedicines(array $medicineIds, float $userLat, float $userLng, float $radius = 5)
+    public function findPharmaciesByMedicines(array $medicineIds, float $userLat, float $userLng, float $radius = 5, $userId = null)
     {
         // Find pharmacies that have ALL selected medicines in stock
         $pharmacies = Pharmacy::whereHas('inventories', function ($query) use ($medicineIds) {

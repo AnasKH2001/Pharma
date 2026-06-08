@@ -1,12 +1,15 @@
 <?php
 
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\LoginController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PharmaRegisterController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Api\SearchHistoryController;
 use App\Http\Controllers\Api\StatController;
 use App\Http\Controllers\Api\UserRegisterController;
 use Illuminate\Http\Request;
@@ -75,5 +78,27 @@ Route::middleware(['auth:sanctum', 'pharmacy.approved'])->group(function () {
     Route::get('/pharmacy/low-stock', [StatController::class, 'lowStock']);
 });
 
-Route::get('/search/medicines', [SearchController::class, 'searchMedicines']);
-Route::post('/search/pharmacies', [SearchController::class, 'findPharmacies']);
+Route::middleware(['auth:sanctum'])->group(function () {
+    // Pharmacy favorites
+    Route::post('/favorites/pharmacies/{id}', [FavoriteController::class, 'addPharmacy']);
+    Route::delete('/favorites/pharmacies/{id}', [FavoriteController::class, 'removePharmacy']);
+    Route::get('/favorites/pharmacies', [FavoriteController::class, 'getFavoritePharmacies']);
+
+    // Medicine favorites
+    Route::post('/favorites/medicines/{id}', [FavoriteController::class, 'addMedicine']);
+    Route::delete('/favorites/medicines/{id}', [FavoriteController::class, 'removeMedicine']);
+    Route::get('/favorites/medicines', [FavoriteController::class, 'getFavoriteMedicines']);
+
+    //Review
+    Route::post('/pharmacies/{id}/rate', [ReviewController::class, 'rate']);
+    Route::get('/pharmacies/{id}/reviews', [ReviewController::class, 'pharmacyReviews']);
+
+    //Search
+    Route::get('/search/medicines', [SearchController::class, 'searchMedicines']);
+    Route::post('/search/pharmacies', [SearchController::class, 'findPharmacies']);
+
+    // Search History
+    Route::get('/search/history', [SearchHistoryController::class, 'index']);
+    Route::delete('/search/history/{id}', [SearchHistoryController::class, 'destroy']);
+    Route::delete('/search/history', [SearchHistoryController::class, 'clearAll']);
+});

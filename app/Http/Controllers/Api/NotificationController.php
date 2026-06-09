@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pharmacy;
+use App\Models\OrderOfferNotification;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
@@ -18,7 +19,7 @@ class NotificationController extends Controller
         $this->notificationService = $notificationService;
     }
 
-    // Get all notifications for the pharmacy
+    // Get low stock notifications for the pharmacy
     public function index(Request $request)
     {
         $user = auth()->user();
@@ -32,36 +33,124 @@ class NotificationController extends Controller
         $perPage = $request->get('per_page', 15);
         $notifications = $this->notificationService->getNotifications($pharmacy->id, $perPage);
 
-        // Format the paginated data
         $notifications->getCollection()->transform(function ($notification) {
             return [
                 'id' => $notification->id,
+                'type' => 'low_stock',
                 'medicine' => [
                     'id' => $notification->medicine->id,
                     'brand_name' => $notification->medicine->brand_name,
                     'generic_name' => $notification->medicine->generic_name,
                 ],
+                'is_read' => $notification->is_read,
+                'created_at' => $notification->created_at->diffForHumans(),
+            ];
+        });
+
+        $unreadCount = $this->notificationService->getUnreadCount($pharmacy->id);
+
+        return response()->json([
+            'notifications' => $notifications,
+            'total' => $notifications->total(),
+            'unread_count' => $unreadCount
+        ]);
+    }
+
+    // Get order offer notifications (pharmacy) with status filter
+    public function orderOfferNotifications(Request $request)
+    {
+        $user = auth()->user();
+
+        $pharmacy = Pharmacy::where('email', $user->email)->first();
+
+        if (!$pharmacy) {
+            return response()->json(['message' => 'Pharmacy not found'], 404);
+        }
+
+        $perPage = $request->get('per_page', 15);
+        $status = $request->get('status');
+        $onlyUnread = filter_var($request->get('only_unread', false), FILTER_VALIDATE_BOOLEAN);
+
+        $query = OrderOfferNotification::with('orderOffer.order', 'orderOffer.supplier')
+            ->where('pharmacy_id', $pharmacy->id);
+
+        if ($status) {
+            $query->whereHas('orderOffer', function ($q) use ($status) {
+                $q->where('status', $status);
+            });
+        }
+
+        if ($onlyUnread) {
+            $query->where('is_read', false);
+        }
+
+        $notifications = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+        $unreadCount = OrderOfferNotification::where('pharmacy_id', $pharmacy->id)
+            ->where('is_read', false)
+            ->count();
+
+        $notifications->getCollection()->transform(function ($notification) {
+            return [
+                'id' => $notification->id,
+                'type' => 'offer_received',
+                'offer_id' => $notification->order_offer_id,
+                'offer_status' => $notification->orderOffer->status,
+                'order_id' => $notification->orderOffer->order_id,
+                'supplier_name' => $notification->orderOffer->supplier->name ?? null,
+                'is_read' => $notification->is_read,
                 'created_at' => $notification->created_at->diffForHumans(),
             ];
         });
 
         return response()->json([
             'notifications' => $notifications,
-            'total' => $notifications->total()
+            'total' => $notifications->total(),
+            'unread_count' => $unreadCount
         ]);
     }
 
-    // Mark as read (actually deletes)
+    // Mark order offer notification as read
+    public function markOrderOfferRead($id)
+    {
+        $notification = OrderOfferNotification::find($id);
+
+        if (!$notification) {
+            return response()->json(['message' => 'Notification not found'], 404);
+        }
+
+        $notification->update(['is_read' => true]);
+
+        return response()->json(['message' => 'Notification marked as read']);
+    }
+
+    // Mark all order offer notifications as read
+    public function markAllOrderOffersRead()
+    {
+        $user = auth()->user();
+
+        $pharmacy = Pharmacy::where('email', $user->email)->first();
+
+        if (!$pharmacy) {
+            return response()->json(['message' => 'Pharmacy not found'], 404);
+        }
+
+        OrderOfferNotification::where('pharmacy_id', $pharmacy->id)
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        return response()->json(['message' => 'All offer notifications marked as read']);
+    }
+
+    // Mark low stock notification as read
     public function markAsRead($id)
     {
         $this->notificationService->markAsRead($id);
 
-        return response()->json([
-            'message' => 'Notification removed'
-        ]);
+        return response()->json(['message' => 'Notification marked as read']);
     }
 
-    // Mark all as read (actually deletes all)
+    // Mark all low stock notifications as read
     public function markAllAsRead()
     {
         $user = auth()->user();
@@ -74,8 +163,6 @@ class NotificationController extends Controller
 
         $this->notificationService->markAllAsRead($pharmacy->id);
 
-        return response()->json([
-            'message' => 'All notifications cleared'
-        ]);
+        return response()->json(['message' => 'All low stock notifications marked as read']);
     }
 }

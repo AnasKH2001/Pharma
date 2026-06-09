@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Repositories\NotificationRepository;
+use App\Models\LowStockNotification;
 
 class NotificationService
 {
@@ -18,13 +19,28 @@ class NotificationService
         return $this->notificationRepository->getByPharmacy($pharmacyId, $perPage);
     }
 
+    public function getUnreadCount($pharmacyId)
+    {
+        return LowStockNotification::where('pharmacy_id', $pharmacyId)
+            ->where('is_read', false)
+            ->count();
+    }
+
     public function markAsRead($notificationId)
     {
-        return $this->notificationRepository->delete($notificationId);
+        $notification = LowStockNotification::find($notificationId);
+        
+        if ($notification) {
+            $notification->update(['is_read' => true]);
+        }
+        
+        return $notification;
     }
 
     public function markAllAsRead($pharmacyId)
     {
-        return $this->notificationRepository->deleteAll($pharmacyId);
+        return LowStockNotification::where('pharmacy_id', $pharmacyId)
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
     }
 }

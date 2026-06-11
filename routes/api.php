@@ -99,6 +99,7 @@ Route::middleware(['auth:sanctum', 'pharmacy.approved'])->group(function () {
     Route::get('/orders/{id}', [OrderController::class, 'orderDetails']);
     Route::get('/orders/{id}/offers', [OrderController::class, 'orderOffers']);
     Route::put('/orders/offers/{offerId}/accept', [OrderController::class, 'acceptOffer']);
+    Route::put('/orders/offers/{offerId}/reject', [OrderController::class, 'rejectOffer']);
     Route::put('/orders/{id}/cancel', [OrderController::class, 'cancelOrder']);
 });
 
@@ -113,6 +114,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     // Notifications
     Route::get('/supplier/notifications', [SupplierNotificationController::class, 'index']);
+    Route::get('/supplier/notifications/rejected', [SupplierNotificationController::class, 'rejectedNotifications']);
     Route::put('/supplier/notifications/{id}/read', [SupplierNotificationController::class, 'markAsRead']);
     Route::put('/supplier/notifications/read-all', [SupplierNotificationController::class, 'markAllAsRead']);
     Route::delete('/supplier/notifications/{id}', [SupplierNotificationController::class, 'destroy']);

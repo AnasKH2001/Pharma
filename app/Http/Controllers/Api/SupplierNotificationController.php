@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\OfferAcceptedNotification;
+use App\Models\OfferRejectedNotification;
 use Illuminate\Http\Request;
 
 class SupplierNotificationController extends Controller
@@ -57,6 +58,18 @@ class SupplierNotificationController extends Controller
             'total' => $notifications->total(),
             'unread_count' => $unreadCount
         ]);
+    }
+
+    public function rejectedNotifications()
+    {
+        $user = auth()->user();
+
+        $notifications = OfferRejectedNotification::with('orderOffer')
+            ->where('supplier_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($notifications);
     }
 
     // Mark notification as read

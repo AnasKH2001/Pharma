@@ -24,22 +24,22 @@ class OrderController extends Controller
     public function createOrder(Request $request)
     {
         $user = auth()->user();
-        
+
         // Only pharmacies can create orders
         if ($user->role !== 'pharmacy') {
             return response()->json(['message' => 'Only pharmacies can create orders'], 403);
         }
-        
+
         $pharmacy = Pharmacy::where('email', $user->email)->first();
-        
+
         $request->validate([
             'items' => 'required|array|min:1',
             'items.*.medicine_id' => 'required|exists:medicines,id',
             'items.*.quantity' => 'required|integer|min:1',
         ]);
-        
+
         $order = $this->orderService->createOrder($pharmacy->id, $request->items);
-        
+
         return response()->json([
             'message' => 'Order created successfully',
             'order' => $order
@@ -50,16 +50,16 @@ class OrderController extends Controller
     public function myOrders(Request $request)
     {
         $user = auth()->user();
-        
+
         if ($user->role !== 'pharmacy') {
             return response()->json(['message' => 'Only pharmacies can view orders'], 403);
         }
-        
+
         $pharmacy = Pharmacy::where('email', $user->email)->first();
-        
+
         $perPage = $request->get('per_page', 15);
         $orders = $this->orderService->getPharmacyOrders($pharmacy->id, $perPage);
-        
+
         return response()->json($orders);
     }
 
@@ -68,11 +68,11 @@ class OrderController extends Controller
     {
         $user = auth()->user();
         $order = $this->orderService->getOrderDetails($id);
-        
+
         if (!$order) {
             return response()->json(['message' => 'Order not found'], 404);
         }
-        
+
         // Check permission
         if ($user->role === 'pharmacy') {
             $pharmacy = Pharmacy::where('email', $user->email)->first();
@@ -82,7 +82,7 @@ class OrderController extends Controller
         } elseif ($user->role !== 'supplier' && $user->role !== 'admin') {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        
+
         return response()->json(['order' => $order]);
     }
 
@@ -90,30 +90,30 @@ class OrderController extends Controller
     public function orderOffers(Request $request, $orderId)
     {
         $user = auth()->user();
-        
+
         if ($user->role !== 'pharmacy') {
             return response()->json(['message' => 'Only pharmacies can view offers'], 403);
         }
-        
+
         $pharmacy = Pharmacy::where('email', $user->email)->first();
         $order = $this->orderService->getOrderDetails($orderId);
-        
+
         if (!$order || $order->pharmacy_id !== $pharmacy->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        
+
         $perPage = $request->get('per_page', 15);
         $status = $request->get('status');
-        
+
         $offers = OrderOffer::with(['supplier', 'itemOffers.orderItem.medicine'])
             ->where('order_id', $orderId);
-        
+
         if ($status) {
             $offers->where('status', $status);
         }
-        
+
         $offers = $offers->orderBy('created_at', 'desc')->paginate($perPage);
-        
+
         return response()->json([
             'order_id' => $orderId,
             'offers' => $offers,
@@ -125,32 +125,64 @@ class OrderController extends Controller
     public function acceptOffer($offerId)
     {
         $user = auth()->user();
-        
+
         if ($user->role !== 'pharmacy') {
             return response()->json(['message' => 'Only pharmacies can accept offers'], 403);
         }
-        
+
         $offer = OrderOffer::with('order')->find($offerId);
-        
+
         if (!$offer) {
             return response()->json(['message' => 'Offer not found'], 404);
         }
-        
+
         $pharmacy = Pharmacy::where('email', $user->email)->first();
-        
+
         if ($offer->order->pharmacy_id !== $pharmacy->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        
+
         if ($offer->status !== 'pending') {
             return response()->json(['message' => 'This offer is no longer available'], 400);
         }
-        
+
         $acceptedOffer = $this->orderService->acceptOffer($offerId);
-        
+
         return response()->json([
             'message' => 'Offer accepted successfully',
             'offer' => $acceptedOffer
+        ]);
+    }
+
+    public function rejectOffer($offerId)
+    {
+        $user = auth()->user();
+
+        if ($user->role !== 'pharmacy') {
+            return response()->json(['message' => 'Only pharmacies can reject offers'], 403);
+        }
+
+        $offer = OrderOffer::with('order')->find($offerId);
+
+        if (!$offer) {
+            return response()->json(['message' => 'Offer not found'], 404);
+        }
+
+        $pharmacy = Pharmacy::where('email', $user->email)->first();
+
+        if ($offer->order->pharmacy_id !== $pharmacy->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        if ($offer->status !== 'pending') {
+            return response()->json(['message' => 'This offer cannot be rejected'], 400);
+        }
+
+        $rejectedOffer = $this->orderService->rejectOffer($offerId);
+
+        return response()->json([
+            'message' => 'Offer rejected successfully',
+            'offer' => $rejectedOffer
         ]);
     }
 
@@ -158,23 +190,23 @@ class OrderController extends Controller
     public function cancelOrder($id)
     {
         $user = auth()->user();
-        
+
         if ($user->role !== 'pharmacy') {
             return response()->json(['message' => 'Only pharmacies can cancel orders'], 403);
         }
-        
+
         $pharmacy = Pharmacy::where('email', $user->email)->first();
-        
+
         $result = $this->orderService->cancelOrder($id, $pharmacy->id);
-        
+
         if (!$result) {
             return response()->json(['message' => 'Order not found'], 404);
         }
-        
+
         if (isset($result['error'])) {
             return response()->json(['message' => $result['error']], 400);
         }
-        
+
         return response()->json([
             'message' => 'Order cancelled successfully',
             'order' => $result

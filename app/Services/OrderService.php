@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ItemOffer;
 use App\Models\OfferAcceptedNotification;
+use App\Models\OfferRejectedNotification;
 use App\Models\Order;
 use App\Models\OrderOffer;
 use App\Models\OrderOfferNotification;
@@ -56,7 +57,7 @@ class OrderService
     public function getPendingOrdersWithDistance($supplierLat, $supplierLng, $perPage = 15)
     {
         $orders = $this->orderRepository->getPendingOrders($perPage);
-        
+
         // Calculate distance for each order's pharmacy
         foreach ($orders->getCollection() as $order) {
             if ($order->pharmacy) {
@@ -70,10 +71,10 @@ class OrderService
                 $order->distance = null;
             }
         }
-        
+
         // Sort by distance (nearest first)
         $orders->getCollection()->sortBy('distance');
-        
+
         return $orders;
     }
 
@@ -126,24 +127,38 @@ class OrderService
     public function acceptOffer($offerId)
     {
         $offer = OrderOffer::with('order')->findOrFail($offerId);
-        
+
         // Update offer status
         $offer->update(['status' => 'accepted']);
-        
+
         // Update order status
         $offer->order->update(['status' => 'assigned']);
-        
+
         // Reject all other offers for this order
         OrderOffer::where('order_id', $offer->order_id)
             ->where('id', '!=', $offerId)
             ->update(['status' => 'rejected']);
-        
+
         // Notify supplier that their offer was accepted
         OfferAcceptedNotification::create([
             'supplier_id' => $offer->supplier_id,
             'order_offer_id' => $offer->id,
         ]);
-        
+
+        return $offer;
+    }
+
+    public function rejectOffer($offerId)
+    {
+        $offer = OrderOffer::with('order')->findOrFail($offerId);
+
+        $offer->update(['status' => 'rejected']);
+
+        OfferRejectedNotification::create([
+            'supplier_id' => $offer->supplier_id,
+            'order_offer_id' => $offer->id,
+        ]);
+
         return $offer;
     }
 
@@ -153,22 +168,22 @@ class OrderService
         $order = Order::where('pharmacy_id', $pharmacyId)
             ->where('id', $orderId)
             ->first();
-        
+
         if (!$order) {
             return null;
         }
-        
+
         if ($order->status !== 'pending') {
             return ['error' => 'Only pending orders can be cancelled'];
         }
-        
+
         $order->update(['status' => 'cancelled']);
-        
+
         // Reject all pending offers for this order
         OrderOffer::where('order_id', $orderId)
             ->where('status', 'pending')
             ->update(['status' => 'cancelled']);
-        
+
         return $order;
     }
 
@@ -178,17 +193,17 @@ class OrderService
         $offer = OrderOffer::where('supplier_id', $supplierId)
             ->where('id', $offerId)
             ->first();
-        
+
         if (!$offer) {
             return null;
         }
-        
+
         if ($offer->status !== 'pending') {
             return ['error' => 'Only pending offers can be cancelled'];
         }
-        
+
         $offer->update(['status' => 'cancelled']);
-        
+
         return $offer;
     }
 
@@ -196,16 +211,16 @@ class OrderService
     private function calculateDistance($lat1, $lon1, $lat2, $lon2)
     {
         $earthRadius = 6371; // kilometers
-        
+
         $latDelta = deg2rad($lat2 - $lat1);
         $lonDelta = deg2rad($lon2 - $lon1);
-        
+
         $a = sin($latDelta / 2) * sin($latDelta / 2) +
-             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-             sin($lonDelta / 2) * sin($lonDelta / 2);
-        
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($lonDelta / 2) * sin($lonDelta / 2);
+
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-        
+
         return round($earthRadius * $c, 2);
     }
 }

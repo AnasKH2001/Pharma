@@ -79,8 +79,9 @@ Route::middleware(['auth:sanctum', 'pharmacy.approved'])->group(function () {
     
     // Low Stock Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
-    Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::get('/notifications/low-stock', [NotificationController::class, 'lowStockNotifications']);
+    Route::put('/notifications/low-stock/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::put('/notifications/low-stock/read-all', [NotificationController::class, 'markAllAsRead']);
     
     // Order Offer Notifications
     Route::get('/notifications/offers', [NotificationController::class, 'orderOfferNotifications']);
@@ -92,6 +93,9 @@ Route::middleware(['auth:sanctum', 'pharmacy.approved'])->group(function () {
     Route::get('/pharmacy/top-medicines', [StatController::class, 'topMedicines']);
     Route::get('/pharmacy/sales-chart', [StatController::class, 'salesChart']);
     Route::get('/pharmacy/low-stock', [StatController::class, 'lowStock']);
+    
+    //Search for meds
+    Route::get('/search/medicines', [SearchController::class, 'searchMedicines']);
     
     // Order Management
     Route::post('/orders', [OrderController::class, 'createOrder']);

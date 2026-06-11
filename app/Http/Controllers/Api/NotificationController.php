@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Pharmacy;
 use App\Models\OrderOfferNotification;
+use App\Models\LowStockNotification;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
@@ -164,5 +165,56 @@ class NotificationController extends Controller
         $this->notificationService->markAllAsRead($pharmacy->id);
 
         return response()->json(['message' => 'All low stock notifications marked as read']);
+    }
+
+    // Get low stock notifications only (separate endpoint)
+    public function lowStockNotifications(Request $request)
+    {
+        $user = auth()->user();
+        $pharmacy = Pharmacy::where('email', $user->email)->first();
+
+        if (!$pharmacy) {
+            return response()->json(['message' => 'Pharmacy not found'], 404);
+        }
+
+        $paginate = $request->get('paginate', false);
+        $perPage = $request->get('per_page', 15);
+
+        $query = LowStockNotification::where('pharmacy_id', $pharmacy->id)
+            ->with('medicine')
+            ->orderBy('created_at', 'desc');
+
+        if ($paginate) {
+            $notifications = $query->paginate($perPage);
+
+            $notifications->getCollection()->transform(function ($notification) {
+                return [
+                    'id' => $notification->id,
+                    'medicine' => [
+                        'id' => $notification->medicine->id,
+                        'brand_name' => $notification->medicine->brand_name,
+                        'generic_name' => $notification->medicine->generic_name,
+                    ],
+                    'is_read' => $notification->is_read,
+                    'created_at' => $notification->created_at->diffForHumans(),
+                ];
+            });
+
+            $unreadCount = LowStockNotification::where('pharmacy_id', $pharmacy->id)
+                ->where('is_read', false)
+                ->count();
+
+            return response()->json([
+                'notifications' => $notifications,
+                'total' => $notifications->total(),
+                'unread_count' => $unreadCount
+            ]);
+        }
+
+        $notifications = $query->get();
+
+        return response()->json([
+            'notifications' => $notifications
+        ]);
     }
 }

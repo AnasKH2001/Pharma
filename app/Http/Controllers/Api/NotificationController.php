@@ -177,44 +177,40 @@ class NotificationController extends Controller
             return response()->json(['message' => 'Pharmacy not found'], 404);
         }
 
-        $paginate = $request->get('paginate', false);
         $perPage = $request->get('per_page', 15);
+        $isRead = $request->has('is_read') ? filter_var($request->get('is_read'), FILTER_VALIDATE_BOOLEAN) : null;
 
         $query = LowStockNotification::where('pharmacy_id', $pharmacy->id)
             ->with('medicine')
             ->orderBy('created_at', 'desc');
 
-        if ($paginate) {
-            $notifications = $query->paginate($perPage);
-
-            $notifications->getCollection()->transform(function ($notification) {
-                return [
-                    'id' => $notification->id,
-                    'medicine' => [
-                        'id' => $notification->medicine->id,
-                        'brand_name' => $notification->medicine->brand_name,
-                        'generic_name' => $notification->medicine->generic_name,
-                    ],
-                    'is_read' => $notification->is_read,
-                    'created_at' => $notification->created_at->diffForHumans(),
-                ];
-            });
-
-            $unreadCount = LowStockNotification::where('pharmacy_id', $pharmacy->id)
-                ->where('is_read', false)
-                ->count();
-
-            return response()->json([
-                'notifications' => $notifications,
-                'total' => $notifications->total(),
-                'unread_count' => $unreadCount
-            ]);
+        if ($isRead !== null) {
+            $query->where('is_read', $isRead);
         }
 
-        $notifications = $query->get();
+        $notifications = $query->paginate($perPage);
+
+        $notifications->getCollection()->transform(function ($notification) {
+            return [
+                'id' => $notification->id,
+                'medicine' => [
+                    'id' => $notification->medicine->id,
+                    'brand_name' => $notification->medicine->brand_name,
+                    'generic_name' => $notification->medicine->generic_name,
+                ],
+                'is_read' => $notification->is_read,
+                'created_at' => $notification->created_at->diffForHumans(),
+            ];
+        });
+
+        $unreadCount = LowStockNotification::where('pharmacy_id', $pharmacy->id)
+            ->where('is_read', false)
+            ->count();
 
         return response()->json([
-            'notifications' => $notifications
+            'notifications' => $notifications,
+            'total' => $notifications->total(),
+            'unread_count' => $unreadCount
         ]);
     }
 }

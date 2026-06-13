@@ -27,8 +27,8 @@ class InventoryService
         ];
     }
 
-    public function getPharmacyInventory($pharmacyId, $perPage = 15)
-    {
-        return $this->inventoryRepository->getByPharmacy($pharmacyId, $perPage);
-    }
+        public function getPharmacyInventory($pharmacyId, $perPage = 15)
+        {
+            return $this->inventoryRepository->getByPharmacy($pharmacyId, $perPage);
+        }
 }

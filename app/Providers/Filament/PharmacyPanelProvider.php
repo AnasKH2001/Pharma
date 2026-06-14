@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pharmacy\Pages\Auth\PharmacyRegister;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -16,7 +17,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-
+use App\Filament\Pharmacy\Pages\Auth\RequestPasswordReset;
 class PharmacyPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -25,6 +26,8 @@ class PharmacyPanelProvider extends PanelProvider
             ->id('pharmacy')
             ->path('pharmacy-panel')
             ->login()
+            ->registration(PharmacyRegister::class)
+            ->passwordReset(RequestPasswordReset::class)
             ->authGuard('web')
             ->colors(['primary' => Color::Blue])
             ->discoverResources(in: app_path('Filament/Pharmacy/Resources'), for: 'App\\Filament\\Pharmacy\\Resources')

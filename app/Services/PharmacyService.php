@@ -12,7 +12,7 @@ class PharmacyService
 {
     protected PharmacyRepository $pharmacyRepository;
     protected UserRepository $userRepository;
-    
+
     public function __construct(
         PharmacyRepository $pharmacyRepository,
         UserRepository $userRepository
@@ -20,11 +20,11 @@ class PharmacyService
         $this->pharmacyRepository = $pharmacyRepository;
         $this->userRepository = $userRepository;
     }
-    
+
     public function register(array $data, array $credentialFiles): array
     {
         $otp = rand(100000, 999999);
-        
+
         // Create user
         $userData = [
             'name' => $data['name'],
@@ -34,16 +34,16 @@ class PharmacyService
             'otp' => $otp,
             'otp_expires_at' => now()->addMinutes(15),
         ];
-        
+
         $user = $this->userRepository->create($userData);
-        
-        
+
+
         $credentialsFolder = 'pharmacy_credentials/pharmacy_' . $user->id;
-        
+
         foreach ($credentialFiles as $file) {
             $file->storeAs($credentialsFolder, $file->getClientOriginalName(), 'public');
         }
-        
+
         // Create pharmacy
         $pharmacyData = [
             'name' => $data['name'],
@@ -57,12 +57,12 @@ class PharmacyService
             'closes_at' => $data['closes_at'],
             'is_active' => false,
         ];
-        
+
         $pharmacy = $this->pharmacyRepository->create($pharmacyData);
-        
+
         // Send OTP email
         Mail::to($user->email)->send(new OtpMail($otp, $user->name));
-        
+
         return [
             'user_id' => $user->id,
             'pharmacy_id' => $pharmacy->id,

@@ -1,5 +1,7 @@
 <?php
 
+use App\Filament\Pharmacy\Pages\Auth\ResetPasswordOtp;
+use App\Filament\Pharmacy\Pages\Auth\VerifyOtp;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
 
@@ -25,9 +27,15 @@ Route::get('/test-email', function () {
             $message->to('test@example.com')
                     ->subject('Mailpit Test Email');
         });
-        
+
         return 'Email sent successfully! Check http://localhost:8025';
     } catch (\Exception $e) {
         return 'Error: ' . $e->getMessage();
     }
 });
+
+Route::get('/pharmacy-panel/verify-otp', VerifyOtp::class)
+    ->name('filament.pharmacy.auth.verify-otp');
+
+Route::get('/pharmacy-panel/reset-password-otp', ResetPasswordOtp::class)
+    ->name('filament.pharmacy.auth.reset-password-otp');

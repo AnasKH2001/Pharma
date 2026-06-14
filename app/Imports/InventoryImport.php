@@ -13,13 +13,13 @@ class InventoryImport implements ToModel, WithHeadingRow
     private $addedCount = 0;
     private $skippedCount = 0;
     private $errors = [];
-    
+
     public function __construct($pharmacyId, $inventoryRepository)
     {
         $this->pharmacyId = $pharmacyId;
         $this->inventoryRepository = $inventoryRepository;
     }
-    
+
     public function model(array $row)
     {
         // Find medicine by name combination
@@ -28,15 +28,15 @@ class InventoryImport implements ToModel, WithHeadingRow
             ->where('dosage', $row['dosage'])
             ->where('form', $row['form'])
             ->first();
-        
+
         if (!$medicine) {
             $this->skippedCount++;
             $this->errors[] = "Medicine not found: {$row['brand_name']} - {$row['generic_name']} ({$row['dosage']}, {$row['form']})";
             return null;
         }
-        
+
         $this->addedCount++;
-        
+
         return $this->inventoryRepository->updateOrCreate(
             $this->pharmacyId,
             $medicine->id,
@@ -44,17 +44,17 @@ class InventoryImport implements ToModel, WithHeadingRow
             $row['price']
         );
     }
-    
+
     public function getAddedCount(): int
     {
         return $this->addedCount;
     }
-    
+
     public function getSkippedCount(): int
     {
         return $this->skippedCount;
     }
-    
+
     public function getErrors(): array
     {
         return $this->errors;

@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -99,5 +101,13 @@ class User extends Authenticatable
     public function isMedicineFavorite($medicineId)
     {
         return $this->favoriteMedicines()->where('medicine_id', $medicineId)->exists();
+    }
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return match($panel->getId()) {
+            'pharma'    => $this->role === 'admin',
+            'pharmacy'  => $this->role === 'pharmacy',
+            default     => false,
+        };
     }
 }

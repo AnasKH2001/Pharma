@@ -23,7 +23,7 @@ class PharmacyResource extends Resource
     // Badge showing pending count on the sidebar
     public static function getNavigationBadge(): ?string
     {
-        $pending = Pharmacy::where('is_active', false)->count();
+        $pending = Pharmacy::where('is_active', true)->count();
         return $pending > 0 ? (string) $pending : null;
     }
 
@@ -110,10 +110,11 @@ class PharmacyResource extends Resource
                     ->requiresConfirmation()
                     ->modalDescription('This will permanently delete the pharmacy and its user account.')
                     ->action(function (Pharmacy $record) {
-                        // Mirror your AdminRepository::rejectPharmacy logic
                         $user = \App\Models\User::where('email', $record->email)->first();
-                        if ($user) $user->delete();
-                        // pharmacy cascades or delete separately if needed
+                        if ($user) {
+                            $user->delete();
+                        }
+                        $record->delete();
                         Notification::make()
                             ->title('Pharmacy rejected and deleted')
                             ->danger()

@@ -1,8 +1,14 @@
 <x-filament-panels::page.simple>
+    <style>
+        .fi-simple-main {
+            max-width: 48rem !important;
+        }
+    </style>
+
     <x-filament-panels::form wire:submit="register">
         {{ $this->form }}
 
-        <x-filament::button type="submit" class="w-full">
+        <x-filament::button type="submit" class="w-full mt-4">
             Register
         </x-filament::button>
     </x-filament-panels::form>

@@ -19,7 +19,15 @@ class MedicineResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-beaker';
     protected static ?string $navigationLabel = 'Medicines';
     protected static ?int $navigationSort = 2;
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) Medicine::count();
+    }
 
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'info';
+    }
     public static function form(Form $form): Form
     {
         return $form

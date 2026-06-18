@@ -17,14 +17,10 @@ class TopPharmaciesTable extends BaseWidget
 
     public function table(Table $table): Table
     {
-        $data = app(StatService::class)->getAdminTopPharmacies(10);
-
         return $table
             ->query(
-            // We use a raw collection — wrap it in a dummy query via fromQuery trick
                 \App\Models\PharmaSale::query()
-                    ->select('pharmacy_id')
-                    ->selectRaw('SUM(quantity) as total_items_sold, SUM(total_price) as total_revenue, COUNT(*) as total_sales')
+                    ->selectRaw('pharmacy_id as id, pharmacy_id, SUM(quantity) as total_items_sold, SUM(total_price) as total_revenue, COUNT(*) as total_sales')
                     ->groupBy('pharmacy_id')
                     ->orderBy('total_revenue', 'desc')
                     ->limit(10)

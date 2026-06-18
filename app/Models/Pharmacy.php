@@ -104,4 +104,22 @@ class Pharmacy extends Model
     {
         return $this->reviews()->avg('rating') ?? 0;
     }
+    public function getCredentialFilesAttribute(): array
+    {
+        if (!$this->credentials) {
+            return [];
+        }
+
+        $files = \Illuminate\Support\Facades\Storage::disk('public')->files($this->credentials);
+        $result = [];
+
+        foreach ($files as $file) {
+            $result[] = [
+                'name' => basename($file),
+                'url'  => \Illuminate\Support\Facades\Storage::disk('public')->url($file),
+            ];
+        }
+
+        return $result;
+    }
 }
